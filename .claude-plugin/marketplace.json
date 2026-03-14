@@ -1,4 +1,8 @@
 {
+  "name": "trentshaines-plugins",
+  "owner": {
+    "name": "Trent Haines"
+  },
   "plugins": [
     {
       "name": "daily-log",
