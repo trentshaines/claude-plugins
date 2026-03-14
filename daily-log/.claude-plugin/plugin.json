@@ -1,10 +1,10 @@
 {
   "name": "daily-log",
-  "version": "1.0.0",
-  "description": "Automatic daily usage logging for Claude Code sessions",
+  "version": "2.0.0",
+  "description": "Automatic daily usage logging for Claude Code sessions with summaries and publishing",
   "author": {
     "name": "Trent Haines"
   },
   "license": "MIT",
-  "keywords": ["logging", "usage", "daily-log", "hooks"]
+  "keywords": ["logging", "usage", "daily-log", "hooks", "summary", "slack", "discord"]
 }

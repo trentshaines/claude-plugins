@@ -1,12 +1,12 @@
 ---
 name: daily-log-summary
-description: Generate daily activity summaries from Claude Code logs and optionally send to Slack. Use when the user asks for a daily summary, work log, what they did today/yesterday, or activity report.
+description: Generate daily activity summaries from Claude Code logs and optionally publish to Slack, Discord, or webhook. Use when the user asks for a daily summary, work log, what they did today/yesterday, or activity report.
 ---
 
 # Daily Summary Generator
 
 ## Overview
-Generates concise bullet-point summaries of daily Claude Code activity from JSONL hook logs, with optional Slack publishing.
+Generates concise bullet-point summaries of daily Claude Code activity from JSONL hook logs, with optional publishing to configured destinations.
 
 ## Data Locations
 - **Raw logs**: `~/.claude/logs/daily/YYYY-MM-DD/SESSION_ID.jsonl`
@@ -58,31 +58,44 @@ Write to `~/.claude/logs/summaries/YYYY-MM-DD.md` in this format:
 - What was done here
 ```
 
-### Step 5: Offer to send to Slack
-- Check if Slack is configured by reading `~/.claude/daily-log.json`
-- If configured, ask: "Send summary to #channel-name?"
+### Step 5: Offer to publish
+- Read `~/.claude/daily-log.json` to check publish config
+- If not configured, tell the user: "Publishing isn't set up. Run `/daily-log:setup` to configure Slack, Discord, or webhook."
+
+**Based on publish type:**
+
+**Slack** (`"type": "slack"`):
+- Ask: "Send summary to #channel-name?"
 - Only send after user confirms
 - Use Slack MCP tools to post to the configured channel ID
-- If NOT configured, tell the user: "Slack isn't set up yet. Run `/daily-log:setup` to configure it."
 
-## Plugin Config File
-
-`~/.claude/daily-log.json`:
-```json
-{
-  "slack": {
-    "enabled": true,
-    "channelId": "YOUR_CHANNEL_ID",
-    "channelName": "#your-channel"
-  }
-}
+**Discord** (`"type": "discord"`):
+- Ask: "Send summary to Discord?"
+- Only send after user confirms
+- POST to the webhook URL:
+```bash
+curl -H "Content-Type: application/json" -d '{"content": "SUMMARY_TEXT"}' WEBHOOK_URL
 ```
 
-If this file doesn't exist, everything works without Slack — summaries are still generated and saved locally.
+**Webhook** (`"type": "webhook"`):
+- Ask: "Send summary to webhook?"
+- Only send after user confirms
+- POST JSON payload:
+```json
+{
+  "text": "SUMMARY_MARKDOWN",
+  "date": "YYYY-MM-DD",
+  "projects": ["project1", "project2"]
+}
+```
+- Include any custom headers from config
+
+**Local** (`"type": "local"`) or no config:
+- Summary is already saved to file, just confirm the path
 
 ## Important Notes
 - Keep bullets concise — one line each, action-oriented
 - Group related prompts into a single bullet (don't list every prompt separately)
 - If a session has only 1-2 trivial prompts, summarize in one bullet
 - Skip empty days (no logs = no summary)
-- Slack is optional — the skill works fully without it
+- Always save locally first, then offer to publish
