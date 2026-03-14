@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    {
+      "name": "daily-log",
+      "description": "Automatic session logging with daily summaries and optional Slack integration",
+      "source": "./daily-log"
+    }
+  ]
+}

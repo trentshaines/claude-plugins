@@ -1,0 +1,10 @@
+{
+  "name": "daily-log",
+  "version": "1.0.0",
+  "description": "Automatic daily usage logging for Claude Code sessions",
+  "author": {
+    "name": "Trent Haines"
+  },
+  "license": "MIT",
+  "keywords": ["logging", "usage", "daily-log", "hooks"]
+}
