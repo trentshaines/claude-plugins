@@ -1,6 +1,6 @@
 # daily-log
 
-A Claude Code plugin that automatically logs session activity, generates summaries, and publishes them to Slack, Discord, or any webhook.
+A Claude Code plugin that automatically logs session activity, generates summaries, and publishes them wherever you want.
 
 **Requires:** python3 (ships with macOS Xcode CLT and most Linux distros)
 
@@ -14,6 +14,8 @@ Hooks into `Stop` and `UserPromptSubmit` events to capture:
 
 Logs are written as JSONL to `~/.claude/logs/daily/YYYY-MM-DD/SESSION_ID.jsonl`.
 
+On each new session, it checks for unsummarized days and automatically generates + publishes summaries.
+
 ## Install
 
 ```bash
@@ -25,11 +27,16 @@ Then restart Claude Code. You'll see a welcome message on first run.
 
 ## Setup
 
-Run `/daily-log:setup` to configure where summaries are published:
-- **Slack** — post to a channel (requires Slack MCP server)
-- **Discord** — post via webhook URL
-- **Webhook** — any HTTP endpoint (Teams, Zapier, n8n, etc.)
-- **Local only** — save as markdown files (default, no config needed)
+Run `/daily-log:setup` to configure:
+
+| Destination | How it works |
+|-------------|-------------|
+| **Slack** | Posts to a channel via Slack MCP server |
+| **Discord** | Posts via webhook URL (no bot needed) |
+| **Webhook** | Any HTTP endpoint (Teams, Zapier, n8n, etc.) |
+| **Obsidian** | Saves as daily notes in your vault |
+| **Notion** | Creates pages via Notion API |
+| **Local only** | Saves as markdown files (default) |
 
 ## Skills
 
@@ -38,8 +45,14 @@ Run `/daily-log:setup` to configure where summaries are published:
 | `/daily-log:status` | Check logging status, today's stats, config |
 | `/daily-log:daily-log-summary` | Generate summaries and publish |
 | `/daily-log:daily-log` | View and query raw logs |
-| `/daily-log:setup` | Configure publish destination |
+| `/daily-log:setup` | Configure publish destination and auto-summary |
 | `/daily-log:cleanup` | Manage old log files |
+
+## Auto-summary
+
+Enabled by default. When you start a new Claude Code session, the plugin checks for any previous days with logs but no summary. If found, it automatically generates and publishes them before you start working.
+
+Disable in `/daily-log:setup` or set `"autoSummary": false` in `~/.claude/daily-log.json`.
 
 ## Query logs manually
 

@@ -1,6 +1,6 @@
 ---
 name: daily-log-summary
-description: Generate daily activity summaries from Claude Code logs and optionally publish to Slack, Discord, or webhook. Use when the user asks for a daily summary, work log, what they did today/yesterday, or activity report.
+description: Generate daily activity summaries from Claude Code logs and optionally publish to Slack, Discord, Obsidian, Notion, or webhook. Use when the user asks for a daily summary, work log, what they did today/yesterday, activity report, or when auto-summary triggers on session start.
 ---
 
 # Daily Summary Generator
@@ -24,12 +24,12 @@ Each JSONL file contains entries like:
 
 ### Step 1: Determine which days need summaries
 - Specific day requested → use that day
-- "catch up" or "all" → find all date directories in `~/.claude/logs/daily/` that don't have a corresponding file in `~/.claude/logs/summaries/`
+- "catch up" or "all" or auto-summary trigger → find ALL date directories in `~/.claude/logs/daily/` that don't have a corresponding file in `~/.claude/logs/summaries/` (exclude today)
 - "today" → today's date
 - "yesterday" → yesterday's date
 
 ### Step 2: Read the raw logs
-- Read all `*.jsonl` files in `~/.claude/logs/daily/YYYY-MM-DD/`
+- For each unsummarized day, read all `*.jsonl` files in `~/.claude/logs/daily/YYYY-MM-DD/`
 - Extract only `"event": "prompt"` entries
 - Group by project
 
@@ -58,28 +58,25 @@ Write to `~/.claude/logs/summaries/YYYY-MM-DD.md` in this format:
 - What was done here
 ```
 
-### Step 5: Offer to publish
+### Step 5: Publish
 - Read `~/.claude/daily-log.json` to check publish config
-- If not configured, tell the user: "Publishing isn't set up. Run `/daily-log:setup` to configure Slack, Discord, or webhook."
+- If not configured, tell the user: "Publishing isn't set up. Run `/daily-log:setup` to configure a destination."
+- If auto-summary triggered this (session start), publish automatically without asking for confirmation
+- If manually triggered, ask before publishing
 
 **Based on publish type:**
 
 **Slack** (`"type": "slack"`):
-- Ask: "Send summary to #channel-name?"
-- Only send after user confirms
 - Use Slack MCP tools to post to the configured channel ID
+- Format as a clean message with the summary markdown
 
 **Discord** (`"type": "discord"`):
-- Ask: "Send summary to Discord?"
-- Only send after user confirms
 - POST to the webhook URL:
 ```bash
-curl -H "Content-Type: application/json" -d '{"content": "SUMMARY_TEXT"}' WEBHOOK_URL
+curl -s -H "Content-Type: application/json" -d '{"content": "SUMMARY_TEXT"}' WEBHOOK_URL
 ```
 
 **Webhook** (`"type": "webhook"`):
-- Ask: "Send summary to webhook?"
-- Only send after user confirms
 - POST JSON payload:
 ```json
 {
@@ -90,12 +87,34 @@ curl -H "Content-Type: application/json" -d '{"content": "SUMMARY_TEXT"}' WEBHOO
 ```
 - Include any custom headers from config
 
+**Obsidian** (`"type": "obsidian"`):
+- Expand `~` in `vaultPath` to the full home directory path
+- Target file: `{vaultPath}/{folder}/YYYY-MM-DD.md`
+- If `appendToExisting` is true and the file exists, append a `## Claude Code Activity` section
+- If `appendToExisting` is false or file doesn't exist, write as a new file
+- Create the folder if it doesn't exist
+
+**Notion** (`"type": "notion"`):
+- Use the Notion API to create a new page under the configured parent
+- POST to `https://api.notion.com/v1/pages` with:
+  - Parent page/database ID from config
+  - Title: `YYYY-MM-DD Claude Code Summary`
+  - Content: summary as paragraph blocks
+- Use `Authorization: Bearer {apiKey}` and `Notion-Version: 2022-06-28` headers
+
 **Local** (`"type": "local"`) or no config:
-- Summary is already saved to file, just confirm the path
+- Summary is already saved to `~/.claude/logs/summaries/`, just confirm the path
+
+## Auto-Summary Behavior
+When triggered by SessionStart (auto-summary hook):
+- Process ALL unsummarized days, not just yesterday
+- Keep output brief — show a compact summary of what was generated
+- Publish automatically if configured (don't ask for confirmation)
+- Then let the user continue with their actual work
 
 ## Important Notes
 - Keep bullets concise — one line each, action-oriented
 - Group related prompts into a single bullet (don't list every prompt separately)
 - If a session has only 1-2 trivial prompts, summarize in one bullet
 - Skip empty days (no logs = no summary)
-- Always save locally first, then offer to publish
+- Always save locally first, then publish to configured destination
